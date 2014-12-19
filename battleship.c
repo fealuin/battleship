@@ -45,13 +45,13 @@ int main(int argc , char *argv[])
     {
 
         //Recibir mensajes desde el servidor
-        while( recv(sock , server_reply , 20000 , 0) > 0)
+        while( recv(sock , server_reply , 10000 , 0) > 0)
         {
             if(strchr(server_reply,'$')>0){ //Si servidor requiere respuesta
-                puts("servidor requiere respuesta:");
-                fflush(stdin);
+                //puts("servidor requiere respuesta:");
+                
                 scanf("%s" , message);
-                if( send(sock , message , 20000 , 0) < 0)
+                if( send(sock , message , 10000 , 0) < 0)
                 {
                     puts("Envio fallido");
                     return 1;

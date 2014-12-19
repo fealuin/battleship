@@ -55,20 +55,22 @@ void escribe_matriz(char p_matriz[TAMANO_TABLERO][TAMANO_TABLERO],int sock)
 {
    int i, j;
    char message[20000];
-   
+   char aux[300];
+   sprintf(message,"");
    for(i=0;i<TAMANO_TABLERO;i++)
    {
-      sprintf(message,"---------------------------------------------------------------------------------\n");
-      write(sock,message,10000);
+      strcat(message,"---------------------------------------------------------------------------------\n");
+      //write(sock,message,strlen(message));
       for(j=0;j<TAMANO_TABLERO;j++)
       {
-         sprintf(message,"|   %c   ", p_matriz[i][j]);//\t
-         write(sock,message,10000);
+        sprintf(aux,"|   %c   ", p_matriz[i][j]);
+         strcat(message,aux);//\t
+         //write(sock,message,strlen(message));
       }
-      sprintf(message,"|\n");
-      write(sock,message,10000);
+      strcat(message,"|\n");
+      //write(sock,message,strlen(message));
    }
-   sprintf(message,"---------------------------------------------------------------------------------\n");
+   strcat(message,"---------------------------------------------------------------------------------\n");
    write(sock,message,10000);
 
 }
@@ -98,10 +100,15 @@ int enemigo(int jugador){
         return 0;
 }
 
-void dispara(int fila,int columna,int sock){
+
+
+void dispara(char * coordenada,int sock){
     char message[20000];
-    
-    if (t[enemigo(nroJugador(sock))].barcos[fila][columna]==1)
+    int fila=coordenada[2]-'0';
+    int columna=transformaLetra(coordenada[0]);
+    char vh=coordenada[3];
+    int jug=nroJugador(sock);
+    if (t[enemigo(nroJugador(sock))].barcos[fila][columna]=='B')
     {
         t[nroJugador(sock)].disparos[fila][columna]='X';
         sprintf(message,"TOCADO!!\n");
@@ -110,6 +117,22 @@ void dispara(int fila,int columna,int sock){
         t[nroJugador(sock)].disparos[fila][columna]='0';
         sprintf(message,"AGUA!!\n");
         write(sock,message,10000); 
+    }
+}
+
+void escribeBarco(char * coordenada,int sock,int largo){
+int i,j;
+int fila=coordenada[2]-'0';
+int columna=transformaLetra(coordenada[0]);
+char vh=coordenada[3];
+int jug=nroJugador(sock);
+
+    for(i=0;i<largo;i++){
+        if(vh=='V'){
+            t[jug].barcos[(fila+i)][columna]='B';
+        }else{
+            t[jug].barcos[fila][(columna+i)]='B';
+        }
     }
 }
 
@@ -129,33 +152,39 @@ void *connection_handler(void *socket_desc)
         write(sock , message , 10000);
         while(jugadores[0]<0 || jugadores[1]<0);
     }
-        sprintf(message,"Por favor ingrese la posicion del primer barco\n");
+        sprintf(message,"Por favor ingrese la posicion portaviones de la forma coordenada V Vertical H Horizontal, por ejemplo A-0V\n");
         write(sock , message , 10000);
-        
         
         sprintf(message, "$");
         write(sock , message , 10000);
 
         read_size=recv(sock , client_message , 10000 , 0);
-            sprintf(message, "muy bien");
-            write(sock , message , 10000);        
+        escribeBarco(client_message,sock,4);
+
+        escribe_matriz(t[nroJugador(sock)].barcos,sock);
+
+                sprintf(message,"Por favor ingrese la posicion barco de la forma coordenada V Vertical H Horizontal, por ejemplo A-0V\n");
+        write(sock , message , 10000);
         
+        sprintf(message, "$");
+        write(sock , message , 10000);
 
+        read_size=recv(sock , client_message , 10000 , 0);
+        escribeBarco(client_message,sock,3);
 
+        escribe_matriz(t[nroJugador(sock)].barcos,sock);
 
-    //dispara(0,0,sock);
-    escribe_matriz(t[0].disparos,sock);
-/*
-    message = "Now type something and i shall repeat what you type \n";
-    write(sock , message , 10000);
-     
-    //Receive a message from client
-    while( (read_size = recv(sock , client_message , 10000 , 0)) > 0 )
-    {
-        //Send the message back to client
-        write(sock , client_message , strlen(client_message));
-    }
-  */   
+while(1){
+        sprintf(message, "Preparados para disparar! por favor anotar coordenada por ejemplo A-0\n");
+        write(sock , message , 10000);
+        sprintf(message, "$");
+        write(sock , message , 10000);
+        read_size=recv(sock , client_message , 10000 , 0);
+        dispara(client_message,sock);
+        escribe_matriz(t[nroJugador(sock)].disparos,sock);
+        //escribe_matriz(t[nroJugador(sock)].barcos,sock);
+}
+           
     if(read_size == 0)
     {
         puts("Client disconnected");
