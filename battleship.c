@@ -1,20 +1,17 @@
-/*
-    C ECHO client example using sockets
-*/
-#include <stdio.h> //printf
-#include <string.h>    //strlen
-#include <sys/socket.h>    //socket
-#include <arpa/inet.h> //inet_addr
+#include <stdio.h> 
+#include <string.h>
+#include <sys/socket.h>  
+#include <arpa/inet.h> 
 #include <stdlib.h> 
-#include <fcntl.h> // for open
-#include <unistd.h> // for close
+#include <fcntl.h> 
+#include <unistd.h> 
 
 
 int main(int argc , char *argv[])
 {
     int sock;
     struct sockaddr_in server;
-    char message[1000] , server_reply[2000];
+    char message[20000] , server_reply[20000];
      
     //CREANDO SOCKET
     sock = socket(AF_INET , SOCK_STREAM , 0);
@@ -41,30 +38,42 @@ int main(int argc , char *argv[])
         return 1;
     }
      
-    puts("Conectado\n");
+    puts("Bienvenido al juego battleship\n");
      
     //Mantener coneccion con el servidor
     while(1)
     {
-        printf("Enter message : ");
-        scanf("%s" , message);
+
+        //Recibir mensajes desde el servidor
+        while( recv(sock , server_reply , 20000 , 0) > 0)
+        {
+            if(strchr(server_reply,'$')>0){ //Si servidor requiere respuesta
+                puts("servidor requiere respuesta:");
+                fflush(stdin);
+                scanf("%s" , message);
+                if( send(sock , message , 20000 , 0) < 0)
+                {
+                    puts("Envio fallido");
+                    return 1;
+                }
+            } else{
+            puts(server_reply);
+            }   
+            //puts("Recepcion fallida");
+            //break;
+        }
+        //puts("Server reply :");
+              sprintf(server_reply,"");
+
+
+        //printf("Enter message : ");
+        
          
         //Enviar mensaje
-        if( send(sock , message , strlen(message) , 0) < 0)
-        {
-            puts("Envio fallido");
-            return 1;
-        }
+
          
-        //Recibir mensajes desde el servidor
-        if( recv(sock , server_reply , 2000 , 0) < 0)
-        {
-            puts("Recepcion fallida");
-            break;
-        }
-         
-        //puts("Server reply :");
-        puts(server_reply);
+
+
     }
      
     close(sock);
